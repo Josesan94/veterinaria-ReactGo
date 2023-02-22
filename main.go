@@ -25,19 +25,21 @@ func main() {
 
 
 	app:= fiber.New()
-	// setupRoutes(app)
 
 	app.Use(cors.New())
 
 	 //run database
 	 configs.ConnectDB()
 
+	 //routes
+	 routes.UserRoute(app)
+
 	app.Static("/", "./veterinary-client/dist")
 
 
 
-	routes.CreateUser(app)
-	routes.GetUsers(app)
+	// routes.CreateUser(app)
+	// routes.GetUsers(app)
 
 
 	app.Listen(":3000")

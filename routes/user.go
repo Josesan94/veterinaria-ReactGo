@@ -1,15 +1,9 @@
 package routes
 
 import (
-	"context"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/bson"
 	"github.com/gofiber/fiber/v2"
-	"github.com/Josesan94/veterinaria-ReactGo/models"
-	"time"
-
+	"github.com/Josesan94/veterinaria-ReactGo/controllers"
 )
 
 //serializer del usuario
@@ -20,78 +14,86 @@ type User struct {
 
 
 
-func CreateUser(router fiber.Router) {
-	router.Post("/users", func(c *fiber.Ctx) error {
-		var user models.User
+// func CreateUser(router fiber.Router) {
+// 	router.Post("/users", func(c *fiber.Ctx) error {
+// 		var user models.User
 
-		c.BodyParser(&user) // me extrae los valores que me envia el frontend
-		client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb://localhost:27017/gomongodb")) //  conecto base de datos
+// 		c.BodyParser(&user) // me extrae los valores que me envia el frontend
+// 		client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb://localhost:27017/gomongodb")) //  conecto base de datos
 
-		coll := client.Database("gomongodb").Collection("users")
-		coll.InsertOne(context.TODO(), bson.D{{
-		Key: "name",
-		Value: user.Name,
-	}})
+// 		coll := client.Database("gomongodb").Collection("users")
+// 		coll.InsertOne(context.TODO(), bson.D{{
+// 		Key: "name",
+// 		Value: user.Name,
+// 	}})
 
-	if err != nil {
-		panic(err)
-	}
+// 	if err != nil {
+// 		panic(err)
+// 	}
 
-		return c.JSON(&fiber.Map{
-			"user": user.Name,
-		})
-	})
+// 		return c.JSON(&fiber.Map{
+// 			"user": user.Name,
+// 		})
+// 	})
 
+// }
+
+func UserRoute(app *fiber.App) {
+    app.Post("/user", controllers.CreateUser)
+	app.Get("/users", controllers.GetAllUsers)
+	app.Get("/user/:userId", controllers.FindUser)
+	app.Put("/user/:userId", controllers.UpdateUser)
+	app.Delete("/user/:userId", controllers.DeleteUser)
 }
 
-func GetUsers(router fiber.Router) {
-	var users []models.User
-	var user models.User
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb://localhost:27017/gomongodb")) //  conecto base de datos
-	coll := client.Database("gomongodb").Collection("users")
+// func GetUsers(router fiber.Router) {
+// 	var users []models.User
+// 	var user models.User
+// 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb://localhost:27017/gomongodb")) //  conecto base de datos
+// 	coll := client.Database("gomongodb").Collection("users")
 	
 
-	router.Get("/users", func(c *fiber.Ctx ) error {
+// 	router.Get("/users", func(c *fiber.Ctx ) error {
 
-		results, error := coll.Find(context.TODO(), bson.M{}) //recorro la data de results, lo decodifico y lo añado al usuario (linea 67)
+// 		results, error := coll.Find(context.TODO(), bson.M{}) //recorro la data de results, lo decodifico y lo añado al usuario (linea 67)
 
-		if err != nil {
-			panic(error)
-		}
+// 		if err != nil {
+// 			panic(error)
+// 		}
 
-		for results.Next(context.TODO()) {
-			var user models.User
-			results.Decode(&user)
-			users = append(users, user)
-		}
+// 		for results.Next(context.TODO()) {
+// 			var user models.User
+// 			results.Decode(&user)
+// 			users = append(users, user)
+// 		}
 
-		return c.JSON(&fiber.Map{
-			"users": users,
-		})
+// 		return c.JSON(&fiber.Map{
+// 			"users": users,
+// 		})
 
-	})
+// 	})
 
-	router.Get("/users/:id", func(c *fiber.Ctx) error { 
+// 	router.Get("/users/:id", func(c *fiber.Ctx) error { 
 
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		id := c.Params("id")
-		coll2 := client.Database("gomongodb").Collection("users")
-		defer cancel()
-		objId, _ := primitive.ObjectIDFromHex(id)
+// 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+// 		id := c.Params("id")
+// 		coll2 := client.Database("gomongodb").Collection("users")
+// 		defer cancel()
+// 		objId, _ := primitive.ObjectIDFromHex(id)
 
-		err := coll2.FindOne(ctx, bson.M{"id": objId}).Decode(&user)
+// 		err := coll2.FindOne(ctx, bson.M{"id": objId}).Decode(&user)
 
-		if err != nil {
-			return c.Status(500).SendString(err.Error())
-		}
+// 		if err != nil {
+// 			return c.Status(500).SendString(err.Error())
+// 		}
 
 
-		return c.JSON(&fiber.Map {
-			"user": user,
-		})
-	})
+// 		return c.JSON(&fiber.Map {
+// 			"user": user,
+// 		})
+// 	})
 
-}
+// }
 
 
 

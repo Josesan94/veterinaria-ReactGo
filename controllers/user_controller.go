@@ -7,7 +7,7 @@ import (
     "github.com/Josesan94/veterinaria-ReactGo/responses"
     "net/http"
     "time"
-
+    "log"
     "github.com/go-playground/validator/v10"
     "github.com/gofiber/fiber/v2"
     "go.mongodb.org/mongo-driver/bson/primitive"
@@ -145,3 +145,97 @@ func DeleteUser(c *fiber.Ctx) error {
         responses.UserResponse{Status: http.StatusOK, Message: "success", Data: &fiber.Map{"data": "User successfully deleted!"}},
     )
 }
+
+func HashPassword(c ^fiber Ctx) error {
+
+}
+
+
+func Register(c *fiber.Ctx) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    defer cancel()
+
+
+    var user models.User
+    if err := c.BodyParser(&user); err != nil {
+        return c.Status(http.StatusBadRequest).JSON(responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: &fiber.Map{"data": err.Error()}})
+    }
+
+    if validationErr := validate.Struct(&user); validationErr != nil {
+        return c.Status(http.StatusBadRequest).JSON(responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: &fiber.Map{"data": validationErr.Error()}})
+    }
+
+    count, err := userCollection.CountDocuments(ctx, bson.M{"emai": user.Email})
+
+    if err != nil {
+        log.Panic(err)
+        return c.Status(http.StatusBadRequest).JSON(responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: &fiber.Map{"data": err.Error()}})
+    }
+    
+    if count > 0 {
+        return c.Status(http.StatusBadRequest).JSON(responses.UserResponse{Status: http.StatusBadRequest, Message: "user already exist", Data: &fiber.Map{"data": err.Error()}})
+    }
+
+    password := HashPassword(*user.Password)
+    user.Password = &password
+    user.ID = primitive.NewObjectID()
+    user.User_Id = user.ID.Hex()
+
+    token, refreshtoken, _ := generate.TokenGenerator(*user.Email, *user.Name, *user.User_ID)
+
+
+    user.Token = &token
+    user.Refresh_Token = &refreshtoken
+    user.UserCart = make([]models.ProductUser, 0)
+    user.Address = models.Address
+
+    _, inserter := userCollection.InsertOne(ctx, user)
+
+    if inserter != nil {
+        return c.Status(http.StatusBadRequest).JSON(responses.UserResponse{Status: http.StatusBadRequest, Message: "the user did not get created", Data: &fiber.Map{"data": err.Error()}})
+        
+    }
+    defer cancel()
+
+    return c.Status(http.StatusOK).JSON("user created")
+
+    } 
+
+
+
+
+func Login(c *fiber.Ctx) error {
+    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    defer cancel()
+
+    var user models.User
+    if err := c.BodyParser(&user); err != nil {
+        return c.Status(http.StatusBadRequest).JSON(responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: &fiber.Map{"data": err.Error()}})
+    }
+
+    err := userCollection.FindOne(ctx, bson.M{"email": user.Email}).Decode(&foundUser)
+    defer cancel()
+
+    if err != nil {
+        return c.Status(http.StatusBadRequest).JSON(responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: &fiber.Map{"data": err.Error()}})
+    }
+
+    PasswordIsValid, msg := VerifyPassword(*user.Password, *foundUser.Password)
+
+    defer cancel()
+
+    if !PasswordIsValid {
+        fmt.Println(msg)
+        return c.Status(http.StatusBadRequest).JSON(responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: &fiber.Map{"data": err.Error()}})
+        
+    }
+
+    token, refreshtoken, _ := generate.TokenGenerator(*foundUser.Email, *foundUser.Name, *foundUser.User_ID)
+    defer cancel()
+
+    generate.UpdateAllTokens(token, refreshtoken, foundUser.User_ID)
+
+    return c.Status(http.StatusCreated).JSON(responses.UserResponse{Status: http.StatusCreated, Message: "success", Data: &fiber.Map{"data": foundUser}})
+}
+
+

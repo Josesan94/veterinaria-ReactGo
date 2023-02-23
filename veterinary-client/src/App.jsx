@@ -1,4 +1,6 @@
 import React, {useState, useEffect} from 'react';
+import { ChakraProvider } from '@chakra-ui/react'
+import Home from './Home.jsx'
 import './App.css'
 
 function App() {
@@ -39,15 +41,9 @@ function App() {
   }, [])
 
   return (
-    <div className="App">
-     <h1>Hello world </h1> 
-      <button onClick={handlePetitions}>Obtener data</button>
-      <form onSubmit={handleSubmit}>
-        <input type="name" placeholder="coloca tu nombre" value={name} onChange={(e) => setName(e.target.value)}/>
-        <button type="submit">Guardar</button>
-
-      </form>
-    </div>
+    <ChakraProvider>
+    <Home handlePetitions={handlePetitions} handleSubmit={handleSubmit} name={name}/>
+    </ChakraProvider>
   )
 }
 

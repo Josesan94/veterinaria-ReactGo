@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"github.com/Josesan94/veterinaria-ReactGo/configs"
 	"time"
 	"context"
 	"errors"
@@ -26,30 +27,30 @@ func NewApplication(prodCollection, userCollection *mongo.Collection) *Applicati
 }
 
 
-func (app *Application) AddToCart(c *fiber.Context)  {
+func (app *Application) AddToCart(c *fiber.Ctx)  {
 	productQueryID := c.Query("id")
-	if productQueryid == "" {
-		log.Println("product id is empty")
+	if productQueryID == "" {
 
-		return c.abortWithError(http.StatusBadRequest, errors.New("product id is empty"))
+		c.Status(http.StatusBadRequest).JSON("product id is empty")
+		return
 	}
 
 	userQueryID := c.Query("userId")
 
 	if	userQueryID == "" {
-		_ = c.abortWithError(http.StatusBadRequest, errors.New("user id is empty"))
+		_ = c.Status(http.StatusBadRequest).JSON("user id is empty")
 		return
 	}
 
-	productID, err := primitive.ObjectIdFromHex(productQueryID)
+	productID, err := primitive.ObjectIDFromHex(productQueryID)
 
 	if err != nil {
 		log.Println(err)
-		c.AbourtWithStatus(http.StatusInternalServerError)
+		c.Status(http.StatusInternalServerError).JSON("product id is empty")
 		return
 	}
 
-	var ctx, cancel = context.withTimeout(context.Background(), 5*time.Second)
+	var ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	configs.AddProductToCart(ctx, app.prodCollection, app.userCollection, productID, userQueryID )
@@ -61,9 +62,9 @@ func (app *Application) AddToCart(c *fiber.Context)  {
 
 }
 
-func (app *Application) RemoveItem(c *fiber.Context) {
+func (app *Application) RemoveItem(c *fiber.Ctx) {
 	productQueryID := c.Query("id")
-	if productQueryid == "" {
+	if productQueryID == "" {
 		log.Println("product id is empty")
 
 		return c.abortWithError(http.StatusBadRequest, errors.New("product id is empty"))
@@ -96,6 +97,6 @@ func (app *Application) RemoveItem(c *fiber.Context) {
 	c.IndentedJSON(200, "Succesfully removed item from the cart")
 }
 
-func SeeCart() {
-
+func GetCart() {
+	
 }

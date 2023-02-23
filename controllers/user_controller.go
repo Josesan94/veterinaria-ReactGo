@@ -2,6 +2,7 @@ package controllers
 
 import (
     "context"
+    "fmt"
     "github.com/Josesan94/veterinaria-ReactGo/configs"
     "github.com/Josesan94/veterinaria-ReactGo/models"
     "github.com/Josesan94/veterinaria-ReactGo/responses"
@@ -13,10 +14,37 @@ import (
     "go.mongodb.org/mongo-driver/bson/primitive"
     "go.mongodb.org/mongo-driver/mongo"
     "go.mongodb.org/mongo-driver/bson"
+    "golang.org/x/crypto/bcrypt"
 )
 
 var userCollection *mongo.Collection = configs.GetCollection(configs.DB, "users")
+var ProductCollection *mongo.Collection = configs.GetCollection(configs.DB, "products")
 var validate = validator.New()
+
+func HashPassword(password string)  string {
+    bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+
+    if err != nil {
+        log.Panic(err)
+    }
+    return string(bytes)
+
+}
+
+func VerifyPassword(userPassword string, givenPassword string) (bool, string) {
+    err := bcrypt.CompareHasAndPassword([]byte(givenPassword), []byte(userPassword))
+    valid := true
+    msg := ""
+
+    if err != nil {
+        msg = "login or password incorrect"
+        valid = false
+    }
+
+    return valid, msg
+}
+
+
 
 func GetAllUsers(c *fiber.Ctx) error {
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -146,9 +174,7 @@ func DeleteUser(c *fiber.Ctx) error {
     )
 }
 
-func HashPassword(c ^fiber Ctx) error {
 
-}
 
 
 func Register(c *fiber.Ctx) error {
@@ -188,6 +214,7 @@ func Register(c *fiber.Ctx) error {
     user.Refresh_Token = &refreshtoken
     user.UserCart = make([]models.ProductUser, 0)
     user.Address = models.Address
+    user.Pet = models.Pet
 
     _, inserter := userCollection.InsertOne(ctx, user)
 

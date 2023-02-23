@@ -12,9 +12,10 @@ type User struct {
 	Password		string `json:"password validate:"required"`
 	Token			string `json:"token"`
 	Refresh_Token	string `json:"refresh_token"`
-	User_ID		string `json:"user_id"`
+	User_ID			string `json:"user_id"`
 	Address			string `json:"address"`
 	UserCart		[]ProductUser `json:"usercart"`
+	Pet 			string `json:"pet"`
 }
 
 type ProductUser struct {
